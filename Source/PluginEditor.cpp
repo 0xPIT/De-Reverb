@@ -1,128 +1,101 @@
 /*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
+   
 */
-
-
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-
 //==============================================================================
-DereverbAudioProcessorEditor::DereverbAudioProcessorEditor (DereverbAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+DereverbAudioProcessorEditor::DereverbAudioProcessorEditor(DereverbAudioProcessor& p)
+    : AudioProcessorEditor(&p), processor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
-    
-    // ===========================================
+    setSize(400, 240);
+    const int sliderY = 80;
+    const int sliderWH = 120;
+
     // REVERB REDUCTION SLIDER
-    // ===========================================
-    reverbReductionSlider.setSliderStyle(Slider::LinearHorizontal);
-    reverbReductionSlider.setRange(0.0f, 100.0f, 1.f);
-    reverbReductionSlider.setBounds(125, 30, 250, 75);
-    reverbReductionSlider.setTextBoxStyle(Slider::TextBoxLeft, false, 50, 25);
+    reverbReductionSlider.setSliderStyle(Slider::Rotary);
+    reverbReductionSlider.setRange(0.0f, 100.0f, 1.f); // value in %
+    reverbReductionSlider.setBounds(30, sliderY, sliderWH, sliderWH);
+    reverbReductionSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(reverbReductionSlider);
-    
-    sliderAttachment.emplace_back(new AudioProcessorValueTreeState::SliderAttachment(
-                                                                        processor.state, "DEREVERB", reverbReductionSlider));
-    
-    reverbSliderLabel.setText("Reverb Reduction(%)", dontSendNotification);
-    reverbSliderLabel.attachToComponent(&reverbReductionSlider, true);
-    reverbSliderLabel.setJustificationType(Justification::left);
+    sliderAttachment.emplace_back(
+        new AudioProcessorValueTreeState::SliderAttachment(
+            processor.state, "DEREVERB", reverbReductionSlider)
+    );
+
+    reverbSliderLabel.setText("De-Reverb", dontSendNotification);
+    reverbSliderLabel.attachToComponent(&reverbReductionSlider, false);
+    reverbSliderLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(reverbSliderLabel);
-    
-    // ===========================================
+        
     // MAKEUP GAIN SLIDER
-    // ===========================================
-    makeupGainSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
-    makeupGainSlider.setRange(-6.0f, 6.0f, 0.01f); // Value in dB
-    makeupGainSlider.setBounds(125, 130, 115, 115);
+    makeupGainSlider.setSliderStyle(Slider::Rotary);
+    makeupGainSlider.setRange(-6.0f, 6.0f, 0.01f); // value in dB
+    makeupGainSlider.setBounds(160, sliderY, sliderWH, sliderWH);
     makeupGainSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(makeupGainSlider);
-    
-    sliderAttachment.emplace_back(new AudioProcessorValueTreeState::SliderAttachment(
-                                                                processor.state, "MAKEUPGAIN", makeupGainSlider));
-    
-    makeupGainLabel.setText("Make-up Gain (dB)", dontSendNotification);
+    sliderAttachment.emplace_back(
+        new AudioProcessorValueTreeState::SliderAttachment(processor.state, "MAKEUPGAIN", makeupGainSlider)
+    );
+
+    makeupGainLabel.setText("Make-up Gain", dontSendNotification);
     makeupGainLabel.attachToComponent(&makeupGainSlider, false);
     makeupGainLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(makeupGainLabel);
     
-    // ===========================================
     // BYPASS BUTTON
-    // ===========================================
-    //bypassButton.addListener(this);
-    bypassButton.setBounds(50, 130, 75, 30);
+    bypassButton.setBounds(145, 155, 24, 24);
     bypassButton.setClickingTogglesState(true);
     addAndMakeVisible(bypassButton);
+    buttonAttachment = std::make_unique<AudioProcessorValueTreeState::ButtonAttachment>(
+        processor.state, "BYPASS", bypassButton);
     
-    bypassLabel.setText("Bypass", dontSendNotification);
-    bypassLabel.attachToComponent(&bypassButton, false);
-    bypassLabel.setJustificationType(Justification::left);
-    addAndMakeVisible(bypassLabel);
-    
-    buttonAttachment = std::make_unique<AudioProcessorValueTreeState::ButtonAttachment>(processor.state, "BYPASS", bypassButton);
-
-    // ===========================================
     // VU METER
-    // ===========================================
-    inputMeter.setBounds(300, 100, 20, 165);
+    const int meterW = 10;
+    const int meterH = 110;
+    const int meterY = 90;
+    inputMeter.setBounds(320, meterY, meterW, meterH);
     addAndMakeVisible(inputMeter);
     
-    outputMeter.setBounds(350, 100, 20, 165); // x, y, width, height
+    outputMeter.setBounds(350, meterY, meterW, meterH); // x, y, width, height
     addAndMakeVisible(outputMeter);
     
     startTimer(60);
-    
 }
 
-DereverbAudioProcessorEditor::~DereverbAudioProcessorEditor()
-{
-}
+DereverbAudioProcessorEditor::~DereverbAudioProcessorEditor() { }
 
-//==============================================================================
-void DereverbAudioProcessorEditor::paint (Graphics& g)
+void DereverbAudioProcessorEditor::paint(Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    //g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
-    g.fillAll (Colours::dodgerblue);
+    g.fillAll (getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
 
-    // Plug-In Title
-    g.setColour (Colours::whitesmoke);
-    g.setFont (30.0f);
-    g.drawFittedText ("De-Reverberator", getLocalBounds(), Justification::centredTop, 1);
+    g.setColour(Colours::whitesmoke);
+    g.setFont(30.0f);
+    g.drawFittedText("De-Reverb", getLocalBounds(), Justification::centredTop, 1);
+
     g.setFont(12.0f);
-    g.drawFittedText("Ryan Miller", getLocalBounds(), Justification::bottomRight, 1);
-    g.setFont(14.0f);
-    g.drawFittedText("Input", 290, 75, 40, 20, Justification::left, 1);
-    g.drawFittedText("Output", 340, 75, 40, 20, Justification::left, 1);
-    
-    
+    g.drawFittedText("@0xPIT, Ryan Miller", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText("Bypass", 125, 180, 60, 20, Justification::centred, 1);
+
+    g.setFont(20.0f);
+    int sliderTextY = 80+60+10;
+    g.drawFittedText("%",   30+60-10, sliderTextY, 20, 20, Justification::centred, 1);
+    g.drawFittedText("dB", 160+60-10, sliderTextY, 20, 20, Justification::centred, 1);
+
+    g.setFont(15.0f);
+    g.drawFittedText("In",  320-20+5, 60, 40, 20, Justification::centred, 1);
+    g.drawFittedText("Out", 350-20+5, 60, 40, 20, Justification::centred, 1);
 }
 
-void DereverbAudioProcessorEditor::resized()
+void DereverbAudioProcessorEditor::timerCallback()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-}
-
-void DereverbAudioProcessorEditor::sliderValueChanged(Slider *slider){
-    
-}
-
-void DereverbAudioProcessorEditor::buttonClicked(Button *button){
-    
-}
-
-void DereverbAudioProcessorEditor::timerCallback(){
     inputMeter.update(processor.inputMeterValue);
     outputMeter.update(processor.outputMeterValue);
 }
+
+void DereverbAudioProcessorEditor::resized() { }
+
+void DereverbAudioProcessorEditor::sliderValueChanged(Slider *slider) { }
+
+void DereverbAudioProcessorEditor::buttonClicked(Button *button) { }

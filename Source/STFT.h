@@ -20,11 +20,7 @@
 #include <JuceHeader.h>
 #include "Dereverb.hpp"
 
-//==============================================================================
-
-
-class STFT
-{
+class STFT {
 public:
     enum windowTypeIndex {
         windowTypeRectangular = 0,
@@ -32,40 +28,26 @@ public:
         windowTypeHann,
         windowTypeHamming,
     };
-    
-    //======================================
-    
+
+    std::unique_ptr<Dereverb> dereverbFilter;
+
     STFT();
     virtual ~STFT();
-    
-    std::unique_ptr<Dereverb> dereverbFilter;
-    
-    //======================================
-    
-    void setup (const int numInputChannels);
-    void updateParameters (const int newFftSize, const int newOverlap, const int newWindowType);
-    
-    //======================================
-    
-    void processBlock (AudioSampleBuffer& block);
-    
+            
+    void setup(const int numInputChannels);
+    void updateParameters(const int newFftSize, const int newOverlap, const int newWindowType);
+    void processBlock(AudioSampleBuffer& block);
     
 private:
-    //======================================
+    void updateFftSize(const int newFftSize);
+    void updateHopSize(const int newOverlap);
+    void updateWindow(const int newWindowType);
     
-    void updateFftSize (const int newFftSize);
-    void updateHopSize (const int newOverlap);
-    void updateWindow (const int newWindowType);
-    
-    //======================================
-    
-    void analysis (const int channel);
-    virtual void modification();
-    void synthesis (const int channel);
-    
+    void analyze(const int channel);
+    /*virtual*/ void modify();
+    void synthesize(const int channel);
     
 protected:
-    //======================================
     int numChannels;
     int numSamples;
     
@@ -96,5 +78,3 @@ protected:
     int currentOutputBufferReadPosition;
     int currentSamplesSinceLastFFT;
 };
-
-//==============================================================================
